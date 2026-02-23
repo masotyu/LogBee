@@ -13,6 +13,22 @@ Powered by **DuckDB**, it allows you to instantly filter and sort through tens o
 
 - 🔍 **SQL-like Filtering**: Extract data under complex conditions using standard `WHERE` clause syntax.
 
+## 📦 Installation
+
+### Windows
+
+1. Download the latest `LogBee-setup.exe` from the [Releases](https://github.com/masotyu/LogBee/releases) page.
+2. Run the installer and follow the instructions.
+
+### Ubuntu / Debian (Linux)
+
+1. Download the latest `.deb` package from the [Releases](https://github.com/masotyu/LogBee/releases) page.
+2. Install it via terminal:
+
+```bash
+sudo dpkg -i logbee_*.deb
+```
+
 ## 📖 Usage
 
 ### 1. Launching LogBee

@@ -11,6 +11,22 @@ LogBeeは、JSON形式のログファイルを閲覧するためのTUI（ター�
 
 - 🔍 **SQLライクなフィルタリング**: `WHERE` 句の構文で複雑な条件抽出が可能
 
+## 📦 インストール方法
+
+### Windows
+
+1. [Releases](https://github.com/masotyu/LogBee/releases) ページから最新の `LogBee-setup.exe` をダウンロードします。
+2. インストーラーを実行し、指示に従ってインストールしてください。
+
+### Ubuntu / Debian (Linux)
+
+1. [Releases](https://github.com/masotyu/LogBee/releases) ページから `.deb` パッケージをダウンロードします。
+2. 以下のコマンドでインストールします：
+
+```bash
+sudo dpkg -i logbee_*.deb
+```
+
 ## 📖 使い方
 
 ### 1. LogBee の起動
