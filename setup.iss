@@ -13,6 +13,8 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 ChangesEnvironment=yes
+; システム環境変数を書き換えるため管理者権限を求める
+PrivilegesRequired=admin
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -24,30 +26,8 @@ Source: "target\release\LogBee.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Registry]
-Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; Flags: preservestringtype
-
-[Code]
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
-var
-  Path: string;
-  AppPath: string;
-begin
-  if CurUninstallStep = usPostUninstall then
-  begin
-    // レジストリから現在の Path を取得
-    if RegQueryStringValue(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', Path) then
-    begin
-      AppPath := ExpandConstant('{app}');
-
-      // セミコロン付きのパスを検索して削除
-      StringChangeEx(Path, ';' + AppPath, '', True);
-      // 先頭にいた場合のパターンも削除
-      StringChangeEx(Path, AppPath + ';', '', True);
-      // 万が一単体だった場合も削除
-      StringChangeEx(Path, AppPath, '', True);
-
-      // 修正した Path をレジストリに書き戻す
-      RegWriteExpandStringValue(HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', Path);
-    end;
-  end;
-end;
+Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
+    ValueType: expandsz; \
+    ValueName: "Path"; \
+    ValueData: "{olddata};{app}"; \
+    Flags: preservestringtype
