@@ -78,7 +78,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install build dependencies
-        run: dnf install -y gcc openssl-devel rpm-build
+        run: dnf install -y gcc-c++ openssl-devel rpm-build curl
 
       - name: Install Rust
         run: |
