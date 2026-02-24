@@ -27,6 +27,15 @@ LogBeeは、JSON形式のログファイルを閲覧するためのTUI（ター�
 sudo dpkg -i logbee_*.deb
 ```
 
+### Fedora / RHEL / CentOS
+
+1. [Releases](https://github.com/masotyu/LogBee/releases) ページから最新の `.rpm` ファイルをダウンロードします。
+2. 以下のコマンドを実行してインストールします：
+
+```bash
+sudo dnf install ./logbee-*.rpm
+```
+
 ## 📖 使い方
 
 ### 1. LogBee の起動

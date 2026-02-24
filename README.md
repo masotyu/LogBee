@@ -29,6 +29,15 @@ Powered by **DuckDB**, it allows you to instantly filter and sort through tens o
 sudo dpkg -i logbee_*.deb
 ```
 
+### Fedora / RHEL / CentOS
+
+1. Download the latest `.rpm` package from the [Releases](https://github.com/masotyu/LogBee/releases) page.
+2. Install it via terminal:
+
+```bash
+sudo dnf install ./logbee-*.rpm
+```
+
 ## 📖 Usage
 
 ### 1. Launching LogBee
