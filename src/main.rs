@@ -11,7 +11,11 @@ use ratatui::{
     style::{Color, Modifier, Style},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
 };
-use std::{env, io};
+use std::{
+    env,
+    fs::File,
+    io::{self, BufRead, BufReader},
+};
 
 #[derive(PartialEq)]
 enum InputMode {
@@ -46,11 +50,20 @@ struct App {
 impl App {
     fn new(file_path: &str) -> Result<App, Box<dyn std::error::Error>> {
         let conn = Connection::open_in_memory()?;
+
+        // JSONの読み込みに失敗した場合DuckDBのエラーメッセージをそのまま表示する
         let import_query = format!(
-            "CREATE TABLE raw_logs AS SELECT row_number() OVER() as log_id, * FROM read_json_auto('{}')",
+            "CREATE TABLE raw_logs AS SELECT row_number() OVER() as log_id, * FROM read_json_auto('{}', ignore_errors=false)",
             file_path.replace("\\", "/")
         );
-        conn.execute(&import_query, [])?;
+        conn.execute(&import_query, []).map_err(|e| {
+            format!(
+                "Fatal Error: Failed to parse JSON file.\n\
+                 Reason: {}\n\n\
+                 Please check if the file is a valid JSON-lines format.",
+                e
+            )
+        })?;
 
         let mut stmt = conn.prepare("DESCRIBE raw_logs")?;
         let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
@@ -102,6 +115,10 @@ impl App {
         let order = if self.sort_desc { "ASC" } else { "DESC" };
         let offset = self.current_page * self.page_size;
 
+        // クエリの実行と結果の処理
+        // SQL Injectionと指摘されるリスクがありそうだが、以下の理由で許容する
+        // - ツール自体がローカルで完結するものであり、外部からの攻撃ベクトルがない
+        // - クエリはユーザーが直接入力するものであり、ユーザーが自分自身を攻撃する可能性はあるが、同時に自己責任の範囲内である
         let sql = format!(
             "SELECT log_id, to_json(raw_logs)::TEXT FROM raw_logs WHERE {} ORDER BY \"{}\" {} LIMIT {} OFFSET {}",
             where_clause, sort_col, order, self.page_size, offset
@@ -164,6 +181,56 @@ impl App {
     }
 }
 
+/// 指定されたファイルが JSONL (JSON Lines) 形式であるか、先頭から数行をサンプリングして検証します。
+///
+/// 巨大なファイルをすべてスキャンすると起動が遅くなるため、`sample_lines` で指定された行数のみを
+/// 検査することで、パフォーマンスと安全性のバランスをとります。
+///
+/// # 引数
+///
+/// * `path` - 検証対象となるログファイルのパス。
+/// * `sample_lines` - 検査する最大行数。
+///
+/// # 戻り値
+///
+/// * `Ok(())` - 指定された行数がすべて有効な JSON である場合。
+/// * `Err` - ファイルが開けない場合、または途中に無効な JSON 行が見つかった場合。
+///   エラーメッセージには、問題が発生した行番号と内容が含まれます。
+///
+/// # エラー
+///
+/// 以下の場合にエラーを返します：
+/// - ファイルが存在しない、または読み取り権限がない。
+/// - サンプリング範囲内に、JSON としてパースできない行が存在する。
+fn is_jsonl_file(path: &str, sample_lines: usize) -> Result<(), Box<dyn std::error::Error>> {
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    for (i, line) in reader.lines().take(sample_lines).enumerate() {
+        let line = line?;
+        let trimmed = line.trim();
+
+        // 空行はスキップ（ログファイルにはよくあるため）
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        // JSONとしてパースできるかチェック
+        if let Err(e) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            return Err(format!(
+                "Error: Line {} is not a valid JSON.\n\
+                 Content: {}\n\
+                 Detail: {}",
+                i + 1,
+                trimmed,
+                e
+            )
+            .into());
+        }
+    }
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 || args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
@@ -196,7 +263,16 @@ QUERY EXAMPLES:
             std::process::exit(0);
         }
     }
-    let app = App::new(&args[1])?;
+
+    let file_path = &args[1];
+    // 先頭から5行をサンプリングして、JSONL形式であるか検査する
+    if let Err(e) = is_jsonl_file(file_path, 5) {
+        eprintln!("Invalid Log Format:");
+        eprintln!("{}", e);
+        std::process::exit(1);
+    }
+
+    let app = App::new(file_path)?;
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
@@ -455,4 +531,66 @@ fn ui(f: &mut Frame, app: &mut App) {
         Paragraph::new(help).style(Style::default().bg(Color::DarkGray)),
         chunks[2],
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use tempfile::NamedTempFile; // cargo add tempfile --dev が必要
+
+    // 補助関数：一時ファイルを作成して内容を書き込む
+    fn create_temp_log(content: &str) -> NamedTempFile {
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(file, "{}", content).unwrap();
+        file
+    }
+
+    #[test]
+    fn test_valid_jsonl() {
+        let content = r#"{"level": "info", "msg": "hello"}
+{"level": "error", "msg": "world"}"#;
+        let file = create_temp_log(content);
+
+        // 最初の2行を検査して、パスすることを確認
+        assert!(is_jsonl_file(file.path().to_str().unwrap(), 2).is_ok());
+    }
+
+    #[test]
+    fn test_invalid_json_format() {
+        let content = r#"{"level": "info"}
+Invalid JSON Line
+{"level": "error"}"#;
+        let file = create_temp_log(content);
+
+        // 2行目で失敗することを確認
+        let result = is_jsonl_file(file.path().to_str().unwrap(), 3);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Line 2"));
+    }
+
+    #[test]
+    fn test_empty_lines_are_skipped() {
+        let content = r#"{"level": "info"}
+
+{"level": "debug"}"#;
+        let file = create_temp_log(content);
+
+        // 空行があってもエラーにならないことを確認
+        assert!(is_jsonl_file(file.path().to_str().unwrap(), 3).is_ok());
+    }
+
+    #[test]
+    fn test_sampling_limit() {
+        let content = r#"{"ok": true}
+{"bad": }
+{"ok": true}"#;
+        let file = create_temp_log(content);
+
+        // サンプル数を 1 にすれば、2行目のエラーを無視してパスするはず
+        assert!(is_jsonl_file(file.path().to_str().unwrap(), 1).is_ok());
+
+        // サンプル数を 2 にすれば、エラーを検知するはず
+        assert!(is_jsonl_file(file.path().to_str().unwrap(), 2).is_err());
+    }
 }
