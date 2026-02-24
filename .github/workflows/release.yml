@@ -96,12 +96,11 @@ jobs:
           if [ "$VERSION" = "" ]; then VERSION="0.1.0"; fi
           # 1. RPMビルド構造の作成
           mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,BUILD,BUILDROOT}
-          # 2. バイナリを BUILD ディレクトリ直下にコピー
-          # ※ rpmbuild はデフォルトでここを %{_builddir} として参照します
-          cp target/release/logbee ~/rpmbuild/BUILD/
+          # 2. バイナリを .spec で指定した /tmp にコピー
+          cp target/release/logbee /tmp/logbee
           # 3. ビルド実行
           rpmbuild -bb --define "_version $VERSION" logbee.spec
-          # 4. 生成物の回収
+          # 4. 生成物をカレントディレクトリに回収
           cp ~/rpmbuild/RPMS/x86_64/*.rpm ./
 
       - name: Release
