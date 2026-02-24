@@ -15,7 +15,8 @@ LogBee is a TUI log viewer designed for JSON log files, powered by DuckDB.
 
 %install
 mkdir -p %{buildroot}/usr/bin
-install -p -m 755 logbee %{buildroot}/usr/bin/logbee
+# %{_builddir} を付けて、確実にコピー元の場所を指定する
+install -p -m 755 %{_builddir}/logbee %{buildroot}/usr/bin/logbee
 
 %files
 /usr/bin/logbee

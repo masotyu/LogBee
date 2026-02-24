@@ -92,19 +92,16 @@ jobs:
 
       - name: Create RPM
         run: |
-          # 1. タグ名から 'v' を除いたバージョン番号を取得 (例: v0.4.0 -> 0.4.0)
-          # タグがない場合はデフォルトで 0.1.0 を使用
           VERSION=${GITHUB_REF_NAME#v}
           if [ "$VERSION" = "" ]; then VERSION="0.1.0"; fi
-          echo "Building RPM for version: $VERSION"
-
-          # 2. RPM ビルド用のディレクトリ構造を作成
-          mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,BUILD}
-          # 3. バイナリを BUILD ディレクトリにコピー
+          # 1. RPMビルド構造の作成
+          mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,BUILD,BUILDROOT}
+          # 2. バイナリを BUILD ディレクトリ直下にコピー
+          # ※ rpmbuild はデフォルトでここを %{_builddir} として参照します
           cp target/release/logbee ~/rpmbuild/BUILD/
-          # 4. spec ファイルを使ってビルド (--define でバージョンを渡す)
+          # 3. ビルド実行
           rpmbuild -bb --define "_version $VERSION" logbee.spec
-          # 5. 生成された RPM を作業ディレクトリに移動
+          # 4. 生成物の回収
           cp ~/rpmbuild/RPMS/x86_64/*.rpm ./
 
       - name: Release
