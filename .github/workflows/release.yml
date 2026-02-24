@@ -37,6 +37,7 @@ jobs:
             target/release/LogBee.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build-ubuntu:
     name: Build and Release on Ubuntu
     runs-on: ubuntu-latest
@@ -65,5 +66,51 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: target/debian/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-rpm:
+    name: Build and Release on Fedora
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: dnf install -y gcc openssl-devel rpm-build
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Build binary
+        run: |
+          source $HOME/.cargo/env
+          cargo build --release
+
+      - name: Create RPM
+        run: |
+          # 1. タグ名から 'v' を除いたバージョン番号を取得 (例: v0.4.0 -> 0.4.0)
+          # タグがない場合はデフォルトで 0.1.0 を使用
+          VERSION=${GITHUB_REF_NAME#v}
+          if [ "$VERSION" = "" ]; then VERSION="0.1.0"; fi
+          echo "Building RPM for version: $VERSION"
+
+          # 2. RPM ビルド用のディレクトリ構造を作成
+          mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,BUILD}
+          # 3. バイナリを BUILD ディレクトリにコピー
+          cp target/release/logbee ~/rpmbuild/BUILD/
+          # 4. spec ファイルを使ってビルド (--define でバージョンを渡す)
+          rpmbuild -bb --define "_version $VERSION" logbee.spec
+          # 5. 生成された RPM を作業ディレクトリに移動
+          cp ~/rpmbuild/RPMS/x86_64/*.rpm ./
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: "*.rpm"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
