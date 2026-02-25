@@ -1,7 +1,7 @@
 [Setup]
 AppId={{5433C926-9B0D-44A6-9E70-9F4F9FC3C9D2}}
 AppName=LogBee
-AppVersion=0.1.0
+AppVersion=0.3.0
 AppPublisher=Masotyu
 DefaultDirName={autopf}\LogBee
 DefaultGroupName=LogBee
