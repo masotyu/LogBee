@@ -1,24 +1,9 @@
 [package]
 name = "logbee"
-version = "0.3.0"
+version = "0.5.0"
 edition = "2024"
 description = "A terminal-based log viewer built with Rust, utilizing DuckDB for efficient log querying and Ratatui for a rich terminal UI experience."
 license = "MIT"
-
-[package.metadata.deb]
-maintainer = "Masotyu <41238874+masotyu@users.noreply.github.com>"
-copyright = "2026, Masotyu <41238874+masotyu@users.noreply.github.com>"
-depends = "$auto, libc6 (>= 2.31), libstdc++6 (>= 10)"
-license-file = ["LICENSE", "0"]
-extended-description = """\
-High-performance JSON log viewer powered by DuckDB.
-Allows instant filtering and pretty-printing of structured logs.
-"""
-section = "utility"
-priority = "optional"
-assets = [
-    ["target/release/logbee", "/usr/bin/logbee", "755"],
-]
 
 [dependencies]
 crossterm = "0.29"

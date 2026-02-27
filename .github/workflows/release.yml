@@ -51,34 +51,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-ubuntu:
-    name: Build and Release on Ubuntu
+  build-deb:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libssl-dev
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install cargo-deb
-        run: cargo install cargo-deb
-
-      - name: Build Release
+      - name: Build binary
         run: cargo build --release
 
-      - name: Create Deb Package
-        run: cargo deb --no-build # すでにビルド済みなので no-build
+      - name: Prepare Debian Package Directory
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          STAGING=target/pkg-deb
 
-      - name: Release
+          # 1. 必要な構造を作成
+          mkdir -p $STAGING/DEBIAN
+          mkdir -p $STAGING/usr/bin
+
+          # 2. バイナリを配置
+          cp target/release/logbee $STAGING/usr/bin/
+
+          # 3. Git管理している control ファイルを DEBIAN ディレクトリへコピー
+          cp installer/deb/control $STAGING/DEBIAN/
+
+          # 4. バージョン情報を置換
+          sed -i "s/__VERSION__/$VERSION/g" $STAGING/DEBIAN/control
+
+          # 5. パーミッションの調整（DEBIANディレクトリは755、controlは644が標準）
+          chmod 755 $STAGING/DEBIAN
+          chmod 644 $STAGING/DEBIAN/control
+
+          # 6. パッケージビルド
+          dpkg-deb --build $STAGING "logbee_${VERSION}_amd64.deb"
+
+      - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/debian/*.deb
+          files: logbee_*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

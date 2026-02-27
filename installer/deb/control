@@ -1,0 +1,7 @@
+Package: logbee
+Version: __VERSION__
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Masotyu <41238874+masotyu@users.noreply.github.com>
+Description: A simple and fast JSON log viewer for your terminal.
