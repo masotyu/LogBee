@@ -52,6 +52,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-deb:
+    name: Build and Release on Debian
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
