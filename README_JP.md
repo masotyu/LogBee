@@ -4,7 +4,7 @@
 
 ## 🚀 LogBee とは？
 
-LogBeeは、JSON形式のログファイルを閲覧するためのTUI（ターミナルUI）ツールです。
+LogBeeは、JSONL形式のログファイルを閲覧するためのTUI（ターミナルUI）ツールです。
 内部に **DuckDB** を搭載しているため、数万件のログに対しても標準的なSQL構文（WHERE句）を使って、瞬時にフィルタリングやソートが行えます。
 
 ## ✨ 主な機能
@@ -15,7 +15,7 @@ LogBeeは、JSON形式のログファイルを閲覧するためのTUI（ター�
 
 ### Windows
 
-1. [Releases](https://github.com/masotyu/LogBee/releases) ページから最新の `LogBee-setup.exe` をダウンロードします。
+1. [Releases](https://github.com/masotyu/LogBee/releases) ページから最新の `LogBee-Setup-*.exe` をダウンロードします。
 2. インストーラーを実行し、指示に従ってインストールしてください。
 
 ### Ubuntu / Debian (Linux)
