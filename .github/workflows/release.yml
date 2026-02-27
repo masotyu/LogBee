@@ -39,7 +39,7 @@ jobs:
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
             /DMyAppVersion="${{ env.VERSION }}" `
-            setup.iss
+            installer/windows/setup.iss
 
       - name: Release
         uses: softprops/action-gh-release@v2
