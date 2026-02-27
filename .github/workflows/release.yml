@@ -11,22 +11,35 @@ permissions:
 jobs:
   build-and-release:
     name: Build and Release on Windows
-    runs-on: windows-latest # Inno Setup を動かすため Windows を使用
+    runs-on: windows-2025 # Inno Setup を動かすため Windows を使用
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Get Version from Tag
+        id: get_version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart('v')
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          echo "Clean version: $version"
+
       - name: Build binary
         run: cargo build --release
 
-      - name: Build Windows Installer
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-        with:
-          path: setup.iss
+      - name: Compile Installer (Inno Setup)
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+            /DMyAppVersion="${{ env.VERSION }}" `
+            setup.iss
 
       - name: Release
         uses: softprops/action-gh-release@v2
