@@ -122,7 +122,7 @@ jobs:
           # 2. バイナリを .spec で指定した /tmp にコピー
           cp target/release/logbee /tmp/logbee
           # 3. ビルド実行
-          rpmbuild -bb --define "_version $VERSION" logbee.spec
+          rpmbuild -bb --define "_version $VERSION" installer/rpm/logbee.spec
           # 4. 生成物をカレントディレクトリに回収
           cp ~/rpmbuild/RPMS/x86_64/*.rpm ./
 
