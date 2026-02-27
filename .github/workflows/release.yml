@@ -46,7 +46,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            target/installer/LogBee-setup.exe
+            target/installer/LogBee-Setup-${{ env.VERSION }}.exe
             target/release/LogBee.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
