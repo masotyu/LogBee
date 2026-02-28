@@ -240,6 +240,11 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
+    if args.len() < 2 || args.contains(&"--version".to_string()) || args.contains(&"-v".to_string()) {
+        println!("LogBee {}", env!("CARGO_PKG_VERSION"));
+        std::process::exit(0);
+    }
+
     if args.len() < 2 || args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
         println!(
             r#"LogBee: JSON Log Viewer
@@ -249,6 +254,7 @@ USAGE:
 
 FLAGS:
     -h, --help      Prints help information
+    -v, --version   Prints version information
 
 KEYBINDINGS (Normal Mode):
     i               Edit Query (SQL WHERE clause)
