@@ -11,10 +11,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap},
 };
-use std::{
-    env,
-    io,
-};
+use std::{env, io};
 
 #[derive(PartialEq)]
 enum InputMode {
@@ -192,7 +189,8 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 || args.contains(&"--version".to_string()) || args.contains(&"-v".to_string()) {
+    if args.len() < 2 || args.contains(&"--version".to_string()) || args.contains(&"-v".to_string())
+    {
         println!("LogBee {}", env!("CARGO_PKG_VERSION"));
         std::process::exit(0);
     }
@@ -379,7 +377,7 @@ where
                         }
                         _ => {}
                     },
-                }
+                },
             }
         }
     }
