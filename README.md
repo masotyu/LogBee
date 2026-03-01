@@ -58,6 +58,7 @@ logbee your-log-file.json
 | <kbd>Tab</kbd> | **Cycle Sort Column**: Toggle between timestamp, level, message, etc. |
 | <kbd>s</kbd> | **Toggle Sort Order**: Switch between Ascending (▲) and Descending (▼) |
 | <kbd>n</kbd> / <kbd>p</kbd> | **Pagination**: Move to Next page / Previous page (loops at ends) |
+| <kbd>g</kbd> | **Jump to Page**: Go to a specific page number |
 | <kbd>Esc</kbd> | **Cancel**: Exit search mode or return to list from Detail View |
 | <kbd>q</kbd> | **Quit**: Exit the application |
 
