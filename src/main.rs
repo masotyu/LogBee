@@ -9,7 +9,7 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap},
 };
 use std::{
     env,
@@ -21,6 +21,7 @@ use std::{
 enum InputMode {
     Normal,
     Editing,
+    PageJump,
 }
 
 #[derive(PartialEq)]
@@ -45,6 +46,7 @@ struct App {
     sort_desc: bool,
     available_columns: Vec<String>,
     sort_col_index: usize,
+    page_jump_input: String,
 }
 
 impl App {
@@ -85,6 +87,7 @@ impl App {
             sort_desc: true,
             available_columns,
             sort_col_index: 0,
+            page_jump_input: String::new(),
         };
         app.run_query();
         Ok(app)
@@ -261,6 +264,7 @@ KEYBINDINGS (Normal Mode):
     Enter           Focus Detail View / List View
     j / k           Move selection / Scroll detail
     n / p           Next / Previous page
+    g               Jump to Page
     s               Toggle Sort Direction (ASC/DESC)
     Tab             Cycle Sort Column
     q               Quit app
@@ -309,8 +313,8 @@ where
             if key.kind != KeyEventKind::Press {
                 continue;
             }
-            if app.input_mode == InputMode::Editing {
-                match key.code {
+            match app.input_mode {
+                InputMode::Editing => match key.code {
                     KeyCode::Esc => app.input_mode = InputMode::Normal,
                     KeyCode::Left => app.cursor_position = app.cursor_position.saturating_sub(1),
                     KeyCode::Right => {
@@ -334,11 +338,37 @@ where
                         app.input_mode = InputMode::Normal;
                     }
                     _ => {}
-                }
-            } else {
-                match app.active_block {
+                },
+                InputMode::PageJump => match key.code {
+                    KeyCode::Enter => {
+                        if let Ok(page) = app.page_jump_input.parse::<usize>() {
+                            let total_pages = app.total_pages();
+                            if page > 0 && page <= total_pages {
+                                app.current_page = page - 1;
+                                app.run_query();
+                            }
+                        }
+                        app.page_jump_input.clear();
+                        app.input_mode = InputMode::Normal;
+                    }
+                    KeyCode::Char(c) if c.is_ascii_digit() => {
+                        app.page_jump_input.push(c);
+                    }
+                    KeyCode::Backspace => {
+                        app.page_jump_input.pop();
+                    }
+                    KeyCode::Esc => {
+                        app.page_jump_input.clear();
+                        app.input_mode = InputMode::Normal;
+                    }
+                    _ => {}
+                },
+                InputMode::Normal => match app.active_block {
                     ActiveBlock::Logs => match key.code {
                         KeyCode::Char('q') => return Ok(()),
+                        KeyCode::Char('g') => {
+                            app.input_mode = InputMode::PageJump;
+                        }
                         KeyCode::Char('i') => app.input_mode = InputMode::Editing,
                         KeyCode::Enter => {
                             app.active_block = ActiveBlock::Detail;
@@ -535,8 +565,10 @@ fn ui(f: &mut Frame, app: &mut App) {
     // 4. Help Guide
     let help = if app.input_mode == InputMode::Editing {
         " <ENTER>: Search | <ESC>: Cancel "
+    } else if app.input_mode == InputMode::PageJump {
+        " <ENTER>: Jump | <ESC>: Cancel "
     } else if app.active_block == ActiveBlock::Logs {
-        " <Enter>: Detail | <i>: Edit | <n/p>: Page | <s>: Sort Dir | <Tab>: Sort Key | <q>: Quit "
+        " <Enter>: Detail | <i>: Edit | <n/p>: Page | <g>: Jump | <s>: Sort Dir | <Tab>: Sort Key | <q>: Quit "
     } else {
         " <Esc/h>: Back to Logs | <j/k>: Scroll "
     };
@@ -544,6 +576,42 @@ fn ui(f: &mut Frame, app: &mut App) {
         Paragraph::new(help).style(Style::default().bg(Color::DarkGray)),
         chunks[2],
     );
+
+    if app.input_mode == InputMode::PageJump {
+        let block = Block::default()
+            .title(" Jump to Page ")
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::Yellow));
+
+        let area = f.area();
+        let popup_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(45),
+                Constraint::Length(3),
+                Constraint::Percentage(45),
+            ])
+            .split(area);
+
+        let popup_area = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(35),
+                Constraint::Percentage(30),
+                Constraint::Percentage(35),
+            ])
+            .split(popup_layout[1])[1];
+
+        let input_text = format!("Page: {}", app.page_jump_input);
+        let paragraph = Paragraph::new(input_text).block(block);
+
+        f.render_widget(Clear, popup_area); // This is important
+        f.render_widget(paragraph, popup_area);
+        f.set_cursor_position((
+            popup_area.x + 1 + "Page: ".len() as u16 + app.page_jump_input.len() as u16,
+            popup_area.y + 1,
+        ));
+    }
 }
 
 #[cfg(test)]
