@@ -13,8 +13,7 @@ use ratatui::{
 };
 use std::{
     env,
-    fs::File,
-    io::{self, BufRead, BufReader},
+    io,
 };
 
 #[derive(PartialEq)]
@@ -184,56 +183,6 @@ impl App {
     }
 }
 
-/// 指定されたファイルが JSONL (JSON Lines) 形式であるか、先頭から数行をサンプリングして検証します。
-///
-/// 巨大なファイルをすべてスキャンすると起動が遅くなるため、`sample_lines` で指定された行数のみを
-/// 検査することで、パフォーマンスと安全性のバランスをとります。
-///
-/// # 引数
-///
-/// * `path` - 検証対象となるログファイルのパス。
-/// * `sample_lines` - 検査する最大行数。
-///
-/// # 戻り値
-///
-/// * `Ok(())` - 指定された行数がすべて有効な JSON である場合。
-/// * `Err` - ファイルが開けない場合、または途中に無効な JSON 行が見つかった場合。
-///   エラーメッセージには、問題が発生した行番号と内容が含まれます。
-///
-/// # エラー
-///
-/// 以下の場合にエラーを返します：
-/// - ファイルが存在しない、または読み取り権限がない。
-/// - サンプリング範囲内に、JSON としてパースできない行が存在する。
-fn is_jsonl_file(path: &str, sample_lines: usize) -> Result<(), Box<dyn std::error::Error>> {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-
-    for (i, line) in reader.lines().take(sample_lines).enumerate() {
-        let line = line?;
-        let trimmed = line.trim();
-
-        // 空行はスキップ（ログファイルにはよくあるため）
-        if trimmed.is_empty() {
-            continue;
-        }
-
-        // JSONとしてパースできるかチェック
-        if let Err(e) = serde_json::from_str::<serde_json::Value>(trimmed) {
-            return Err(format!(
-                "Error: Line {} is not a valid JSON.\n\
-                 Content: {}\n\
-                 Detail: {}",
-                i + 1,
-                trimmed,
-                e
-            )
-            .into());
-        }
-    }
-    Ok(())
-}
-
 fn main() {
     if let Err(e) = run() {
         eprintln!("{}", e);
@@ -282,12 +231,6 @@ QUERY EXAMPLES:
     }
 
     let file_path = &args[1];
-    // 先頭から5行をサンプリングして、JSONL形式であるか検査する
-    if let Err(e) = is_jsonl_file(file_path, 5) {
-        eprintln!("Invalid Log Format:");
-        eprintln!("{}", e);
-        std::process::exit(1);
-    }
 
     let app = App::new(file_path)?;
     enable_raw_mode()?;
@@ -611,67 +554,5 @@ fn ui(f: &mut Frame, app: &mut App) {
             popup_area.x + 1 + "Page: ".len() as u16 + app.page_jump_input.len() as u16,
             popup_area.y + 1,
         ));
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Write;
-    use tempfile::NamedTempFile; // cargo add tempfile --dev が必要
-
-    // 補助関数：一時ファイルを作成して内容を書き込む
-    fn create_temp_log(content: &str) -> NamedTempFile {
-        let mut file = NamedTempFile::new().unwrap();
-        writeln!(file, "{}", content).unwrap();
-        file
-    }
-
-    #[test]
-    fn test_valid_jsonl() {
-        let content = r#"{"level": "info", "msg": "hello"}
-{"level": "error", "msg": "world"}"#;
-        let file = create_temp_log(content);
-
-        // 最初の2行を検査して、パスすることを確認
-        assert!(is_jsonl_file(file.path().to_str().unwrap(), 2).is_ok());
-    }
-
-    #[test]
-    fn test_invalid_json_format() {
-        let content = r#"{"level": "info"}
-Invalid JSON Line
-{"level": "error"}"#;
-        let file = create_temp_log(content);
-
-        // 2行目で失敗することを確認
-        let result = is_jsonl_file(file.path().to_str().unwrap(), 3);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Line 2"));
-    }
-
-    #[test]
-    fn test_empty_lines_are_skipped() {
-        let content = r#"{"level": "info"}
-
-{"level": "debug"}"#;
-        let file = create_temp_log(content);
-
-        // 空行があってもエラーにならないことを確認
-        assert!(is_jsonl_file(file.path().to_str().unwrap(), 3).is_ok());
-    }
-
-    #[test]
-    fn test_sampling_limit() {
-        let content = r#"{"ok": true}
-{"bad": }
-{"ok": true}"#;
-        let file = create_temp_log(content);
-
-        // サンプル数を 1 にすれば、2行目のエラーを無視してパスするはず
-        assert!(is_jsonl_file(file.path().to_str().unwrap(), 1).is_ok());
-
-        // サンプル数を 2 にすれば、エラーを検知するはず
-        assert!(is_jsonl_file(file.path().to_str().unwrap(), 2).is_err());
     }
 }
