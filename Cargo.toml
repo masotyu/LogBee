@@ -1,6 +1,6 @@
 [package]
 name = "logbee"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2024"
 description = "A terminal-based log viewer built with Rust, utilizing DuckDB for efficient log querying and Ratatui for a rich terminal UI experience."
 license = "MIT"
