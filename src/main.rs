@@ -264,6 +264,7 @@ KEYBINDINGS (Normal Mode):
     Enter           Focus Detail View / List View
     j / k           Move selection / Scroll detail
     n / p           Next / Previous page
+    g               Jump to Page
     s               Toggle Sort Direction (ASC/DESC)
     Tab             Cycle Sort Column
     q               Quit app
