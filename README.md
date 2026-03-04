@@ -22,20 +22,18 @@ Powered by **DuckDB**, it allows you to instantly filter and sort through tens o
 
 ### Ubuntu / Debian (Linux)
 
-1. Download the latest `.deb` package from the [Releases](https://github.com/masotyu/LogBee/releases) page.
-2. Install it via terminal:
+Run the following command in your terminal to automatically download and install the latest version:
 
 ```bash
-sudo dpkg -i logbee_*.deb
+URL=$(curl -s https://api.github.com/repos/masotyu/LogBee/releases/latest | grep "browser_download_url.*_amd64.deb" | cut -d '"' -f 4) && curl -L -o logbee_latest.deb "$URL" && sudo apt install -y ./logbee_latest.deb && rm logbee_latest.deb
 ```
 
 ### Fedora / RHEL / CentOS
 
-1. Download the latest `.rpm` package from the [Releases](https://github.com/masotyu/LogBee/releases) page.
-2. Install it via terminal:
+Run the following command in your terminal to automatically download and install the latest version:
 
 ```bash
-sudo dnf install ./logbee-*.rpm
+URL=$(curl -s https://api.github.com/repos/masotyu/LogBee/releases/latest | grep "browser_download_url.*x86_64.rpm" | cut -d '"' -f 4) && curl -L -o logbee_latest.rpm "$URL" && sudo dnf install -y ./logbee_latest.rpm && rm logbee_latest.rpm
 ```
 
 ## 📖 Usage

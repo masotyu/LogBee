@@ -20,20 +20,18 @@ LogBeeは、JSONL形式のログファイルを閲覧するためのTUI（ター
 
 ### Ubuntu / Debian (Linux)
 
-1. [Releases](https://github.com/masotyu/LogBee/releases) ページから `.deb` パッケージをダウンロードします。
-2. 以下のコマンドでインストールします：
+以下のコマンドをターミナルに貼り付けて実行すると、最新版のダウンロードとインストールが自動で行われます。
 
 ```bash
-sudo dpkg -i logbee_*.deb
+URL=$(curl -s https://api.github.com/repos/masotyu/LogBee/releases/latest | grep "browser_download_url.*_amd64.deb" | cut -d '"' -f 4) && curl -L -o logbee_latest.deb "$URL" && sudo apt install -y ./logbee_latest.deb && rm logbee_latest.deb
 ```
 
 ### Fedora / RHEL / CentOS
 
-1. [Releases](https://github.com/masotyu/LogBee/releases) ページから最新の `.rpm` ファイルをダウンロードします。
-2. 以下のコマンドを実行してインストールします：
+以下のコマンドをターミナルに貼り付けて実行すると、最新版のダウンロードとインストールが自動で行われます。
 
 ```bash
-sudo dnf install ./logbee-*.rpm
+URL=$(curl -s https://api.github.com/repos/masotyu/LogBee/releases/latest | grep "browser_download_url.*x86_64.rpm" | cut -d '"' -f 4) && curl -L -o logbee_latest.rpm "$URL" && sudo dnf install -y ./logbee_latest.rpm && rm logbee_latest.rpm
 ```
 
 ## 📖 使い方
